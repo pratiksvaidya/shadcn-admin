@@ -293,43 +293,22 @@ export async function removePolicyDocument(
 }
 
 // Define the type for renewal comparison response
-export interface RenewalComparison {
-  current_policy: {
-    policy_number: string | null;
-    carrier: string | null;
-    annual_premium: number;
-    effective_date: string | null;
-    expiration_date: string | null;
-  };
-  renewal_option: {
-    estimated_premium: number;
-    potential_carrier: string | null;
-    effective_date: string;
-    expiration_date: string;
-  };
-  comparison: {
-    premium_difference: number;
-    premium_percentage_change: number;
-    coverage_changes: Array<{
-      coverage_type: string;
-      current_limit: string;
-      proposed_limit: string;
-      change: string;
-    }>;
-    recommendations: string[];
-  };
-  ai_analysis?: string; // Optional AI-generated analysis
+export interface RenewalComparison {  
+  ai_provider?: 'anthropic' | 'openai'; // The AI provider used for generation
+  email?: string; // The email body content from the AI response
+  attachment?: string; // The attachment content from the AI response
 }
 
 export async function generateRenewalComparison(
   policyId: number,
-  agencyId: number
+  agencyId: number,
+  aiProvider: 'anthropic' | 'openai' = 'openai'
 ): Promise<RenewalComparison> {
   if (!agencyId) {
     throw new Error('Please select an agency to generate renewal comparison')
   }
 
-  const response = await apiClient(`/api/policies/${policyId}/generate_renewal_comparison/?agency_id=${agencyId}`, {
+  const response = await apiClient(`/api/policies/${policyId}/generate_renewal_comparison/?agency_id=${agencyId}&ai_provider=${aiProvider}`, {
     method: 'POST',
   })
 

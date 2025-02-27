@@ -17,6 +17,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { DocumentUpload } from '@/features/policies/components/document-upload'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { marked } from 'marked'
 
 export const Route = createFileRoute('/_authenticated/policies/$policyId')({
   component: PolicyDetail,
@@ -33,7 +35,9 @@ function PolicyDetail() {
   const [isRenewalDialogOpen, setIsRenewalDialogOpen] = useState(false)
   const [renewalComparison, setRenewalComparison] = useState<RenewalComparison | null>(null)
   const [isGeneratingRenewal, setIsGeneratingRenewal] = useState(false)
+  const [aiProvider, setAiProvider] = useState<'anthropic' | 'openai'>('openai')
   const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState('email')
 
   const loadPolicy = async () => {
     if (!selectedAgency) {
@@ -125,7 +129,7 @@ function PolicyDetail() {
     
     try {
       setIsGeneratingRenewal(true);
-      const comparison = await generateRenewalComparison(policy.id, selectedAgency.id);
+      const comparison = await generateRenewalComparison(policy.id, selectedAgency.id, aiProvider);
       setRenewalComparison(comparison);
       setIsRenewalDialogOpen(true);
       
@@ -219,33 +223,51 @@ function PolicyDetail() {
                       </div>
                     </div>
                     <div className="pt-2">
-                      <Button 
-                        variant='outline' 
-                        size='sm'
-                        className='w-full'
-                        onClick={handleGenerateRenewal}
-                        disabled={isGeneratingRenewal || !policy.documents || policy.documents.length === 0}
-                        title={!policy.documents || policy.documents.length === 0 ? 
-                          "Please upload at least one document to generate a renewal comparison" : 
-                          "Generate a renewal comparison for this policy"}
-                      >
-                        {isGeneratingRenewal ? (
-                          <>
-                            <LoadingSpinner size='sm' className='mr-2' />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <IconRefresh className='mr-2 h-4 w-4' />
-                            Generate Renewal Comparison
-                          </>
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex flex-col space-y-1 mb-2">
+                          <label className="text-sm text-muted-foreground">AI Provider:</label>
+                          <Select
+                            value={aiProvider}
+                            onValueChange={(value) => setAiProvider(value as 'anthropic' | 'openai')}
+                            disabled={isGeneratingRenewal}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select AI provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="openai">OpenAI (o3-mini)</SelectItem>
+                              <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          variant='outline' 
+                          size='sm'
+                          className='w-full'
+                          onClick={handleGenerateRenewal}
+                          disabled={isGeneratingRenewal || !policy.documents || policy.documents.length === 0}
+                          title={!policy.documents || policy.documents.length === 0 ? 
+                            "Please upload at least one document to generate a renewal comparison" : 
+                            "Generate a renewal comparison for this policy"}
+                        >
+                          {isGeneratingRenewal ? (
+                            <>
+                              <LoadingSpinner size='sm' className='mr-2' />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <IconRefresh className='mr-2 h-4 w-4' />
+                              Generate Renewal Comparison
+                            </>
+                          )}
+                        </Button>
+                        {(!policy.documents || policy.documents.length === 0) && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Upload documents to enable renewal comparison
+                          </p>
                         )}
-                      </Button>
-                      {(!policy.documents || policy.documents.length === 0) && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Upload documents to enable renewal comparison
-                        </p>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -414,132 +436,137 @@ function PolicyDetail() {
 
       {/* Renewal Comparison Dialog */}
       <Dialog open={isRenewalDialogOpen} onOpenChange={setIsRenewalDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Policy Renewal Comparison</DialogTitle>
           </DialogHeader>
           
           {renewalComparison && (
-            <div className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Current Policy */}
-                <div className="space-y-2">
-                  <h3 className="text-md font-semibold">Current Policy</h3>
-                  <div className="rounded-lg border p-4 space-y-3">
-                    <div>
-                      <label className="text-sm text-muted-foreground">Policy Number</label>
-                      <p>{renewalComparison.current_policy.policy_number || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Carrier</label>
-                      <p>{renewalComparison.current_policy.carrier || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Annual Premium</label>
-                      <p className="font-medium">{formatCurrency(renewalComparison.current_policy.annual_premium)}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Effective Date</label>
-                      <p>{formatDate(renewalComparison.current_policy.effective_date)}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Expiration Date</label>
-                      <p>{formatDate(renewalComparison.current_policy.expiration_date)}</p>
-                    </div>
-                  </div>
+            <div className="space-y-4 flex-grow flex flex-col overflow-hidden">
+              {/* Tabs */}
+              <div className="border-b">
+                <div className="flex">
+                  <button
+                    onClick={() => setActiveTab('email')}
+                    className={`px-4 py-2 text-sm font-medium ${
+                      activeTab === 'email'
+                        ? 'border-b-2 border-primary text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Email Content
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('attachment')}
+                    className={`px-4 py-2 text-sm font-medium ${
+                      activeTab === 'attachment'
+                        ? 'border-b-2 border-primary text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Detailed Report
+                  </button>
                 </div>
-                
-                {/* Renewal Option */}
-                <div className="space-y-2">
-                  <h3 className="text-md font-semibold">Renewal Option</h3>
-                  <div className="rounded-lg border p-4 space-y-3">
-                    <div>
-                      <label className="text-sm text-muted-foreground">Potential Carrier</label>
-                      <p>{renewalComparison.renewal_option.potential_carrier || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Estimated Premium</label>
-                      <div className="flex items-center">
-                        <p className="font-medium">{formatCurrency(renewalComparison.renewal_option.estimated_premium)}</p>
-                        <Badge 
-                          variant={renewalComparison.comparison.premium_difference > 0 ? 'destructive' : 'default'} 
-                          className="ml-2"
-                        >
-                          {renewalComparison.comparison.premium_difference > 0 ? (
-                            <IconArrowUp className="h-3 w-3 mr-1" />
-                          ) : (
-                            <IconArrowDown className="h-3 w-3 mr-1" />
-                          )}
-                          {renewalComparison.comparison.premium_percentage_change.toFixed(1)}%
-                        </Badge>
+              </div>
+              
+              {/* Content Area - Scrollable */}
+              <div className="flex-grow overflow-y-auto pr-2">
+                {activeTab === 'email' && (
+                  <div className="space-y-2">
+                    <div className="rounded-lg border p-4 prose prose-sm max-w-none dark:prose-invert">
+                      <div className="whitespace-pre-wrap">
+                        {renewalComparison.email || 'No email content available.'}
                       </div>
                     </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Effective Date</label>
-                      <p>{formatDate(renewalComparison.renewal_option.effective_date)}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Expiration Date</label>
-                      <p>{formatDate(renewalComparison.renewal_option.expiration_date)}</p>
+                  </div>
+                )}
+                
+                {activeTab === 'attachment' && (
+                  <div className="space-y-2">
+                    <div className="rounded-lg border p-4 prose prose-sm max-w-none dark:prose-invert">
+                      {renewalComparison.attachment ? (
+                        <>
+                          <style dangerouslySetInnerHTML={{ __html: `
+                            .markdown-content table {
+                              font-size: 0.875rem;
+                              width: 100%;
+                              border-collapse: collapse;
+                              margin: 1.5rem 0;
+                            }
+                            .markdown-content th {
+                              background-color: hsl(var(--muted));
+                              font-weight: 600;
+                              text-align: left;
+                              padding: 0.75rem;
+                              border: 1px solid hsl(var(--border));
+                            }
+                            .markdown-content td {
+                              padding: 0.75rem;
+                              border: 1px solid hsl(var(--border));
+                              vertical-align: top;
+                            }
+                            .markdown-content tr:nth-child(even) {
+                              background-color: hsl(var(--muted) / 0.1);
+                            }
+                            .markdown-content thead {
+                              background-color: hsl(var(--muted) / 0.5);
+                            }
+                            .markdown-content table strong {
+                              font-weight: 600;
+                            }
+                            .markdown-content h1 {
+                              font-size: 1.5rem;
+                              margin-top: 1.5rem;
+                              margin-bottom: 1rem;
+                              font-weight: 600;
+                            }
+                            .markdown-content h2 {
+                              font-size: 1.25rem;
+                              margin-top: 1.25rem;
+                              margin-bottom: 0.75rem;
+                              font-weight: 600;
+                            }
+                            .markdown-content h3 {
+                              font-size: 1.125rem;
+                              margin-top: 1rem;
+                              margin-bottom: 0.5rem;
+                              font-weight: 600;
+                            }
+                            .markdown-content ul, .markdown-content ol {
+                              padding-left: 1.5rem;
+                              margin: 1rem 0;
+                            }
+                            .markdown-content li {
+                              margin-bottom: 0.25rem;
+                            }
+                          `}} />
+                          <div 
+                            className="markdown-content" 
+                            dangerouslySetInnerHTML={{ 
+                              __html: marked.parse(renewalComparison.attachment, {
+                                gfm: true,
+                                breaks: true
+                              }) 
+                            }} 
+                          />
+                        </>
+                      ) : (
+                        'No attachment content available.'
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
               </div>
               
-              {/* Coverage Changes */}
-              <div className="space-y-2">
-                <h3 className="text-md font-semibold">Coverage Changes</h3>
-                <div className="rounded-lg border p-4">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2 px-2">Coverage Type</th>
-                        <th className="text-left py-2 px-2">Current Limit</th>
-                        <th className="text-left py-2 px-2">Proposed Limit</th>
-                        <th className="text-left py-2 px-2">Change</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {renewalComparison.comparison.coverage_changes.map((change, index) => (
-                        <tr key={index} className="border-b last:border-0">
-                          <td className="py-2 px-2">{change.coverage_type}</td>
-                          <td className="py-2 px-2">{change.current_limit}</td>
-                          <td className="py-2 px-2">{change.proposed_limit}</td>
-                          <td className="py-2 px-2">{change.change}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              
-              {/* Recommendations */}
-              <div className="space-y-2">
-                <h3 className="text-md font-semibold">Recommendations</h3>
-                <div className="rounded-lg border p-4">
-                  <ul className="list-disc pl-5 space-y-1">
-                    {renewalComparison.comparison.recommendations.map((recommendation, index) => (
-                      <li key={index}>{recommendation}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              
-              {/* AI Analysis */}
-              {renewalComparison.ai_analysis && (
-                <div className="space-y-2">
-                  <h3 className="text-md font-semibold">Detailed Analysis</h3>
-                  <div className="rounded-lg border p-4 prose prose-sm max-w-none">
-                    <div className="whitespace-pre-wrap">
-                      {renewalComparison.ai_analysis}
-                    </div>
-                  </div>
+              {/* AI Provider Info */}
+              {renewalComparison.ai_provider && (
+                <div className="text-xs text-muted-foreground text-right mt-2 flex-shrink-0">
+                  Generated using: {renewalComparison.ai_provider === 'anthropic' ? 'Anthropic (Claude)' : 'OpenAI (o3-mini)'}
                 </div>
               )}
               
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-2 pt-2 border-t flex-shrink-0">
                 <Button variant="outline" onClick={() => setIsRenewalDialogOpen(false)}>Close</Button>
-                <Button>Request Quote</Button>
               </div>
             </div>
           )}

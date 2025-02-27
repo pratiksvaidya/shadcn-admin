@@ -116,6 +116,55 @@ class PolicyViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
+    def generate_renewal_comparison(self, request, pk=None):
+        """
+        Generate a renewal comparison for a policy.
+        This endpoint uses the RenewalComparator service to analyze policy documents
+        and generate a comparison between the current policy and potential renewal options.
+        
+        Query Parameters:
+            - ai_provider: The AI provider to use ('anthropic' or 'openai'). Default is 'anthropic'.
+        """
+        try:
+            policy = self.get_object()
+            
+            # Check if policy has documents
+            if not policy.documents.exists():
+                return Response(
+                    {"detail": "No documents available for comparison. Please upload policy documents first."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get AI provider from query parameters (default to anthropic)
+            ai_provider = request.query_params.get('ai_provider', 'anthropic').lower()
+            
+            # Validate AI provider
+            if ai_provider not in ['anthropic', 'openai']:
+                return Response(
+                    {"detail": "Invalid AI provider. Must be either 'anthropic' or 'openai'."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Use the RenewalComparator service with the specified provider
+            comparator = RenewalComparator(policy, provider=ai_provider)
+            result = comparator.compare()
+            
+            # Check if there was an error
+            if "error" in result:
+                return Response({"detail": result["error"]}, status=status.HTTP_400_BAD_REQUEST)
+            
+            comparison_data = {
+                "ai_provider": ai_provider,
+                "email": result["email"],
+                "attachment": result["attachment"]
+            }
+            
+            return Response(comparison_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
     def remove_document(self, request, pk=None):
         """
         Remove a document from a policy.
