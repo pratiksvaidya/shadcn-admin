@@ -10,6 +10,7 @@ import { Customer } from '@/features/customers/data/schema'
 import { fetchCustomers } from '@/features/customers/data/customers'
 import { Button } from '@/components/ui/button'
 import { IconArrowLeft } from '@tabler/icons-react'
+import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/customers/$customerId')({
   component: CustomerDetail,
@@ -21,6 +22,7 @@ function CustomerDetail() {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const loadCustomer = async () => {
@@ -111,13 +113,23 @@ function CustomerDetail() {
                 <h2 className='text-lg font-semibold'>Businesses</h2>
                 <div className='rounded-lg border p-4'>
                   {customer.businesses && customer.businesses.length > 0 ? (
-                    <div className='space-y-2'>
+                    <div className='space-y-4'>
                       {customer.businesses.map(business => (
-                        <div key={business.id} className='space-y-1'>
+                        <div key={business.id} className='space-y-2'>
                           <p className='font-medium'>{business.name}</p>
                           {business.description && (
                             <p className='text-sm text-muted-foreground'>{business.description}</p>
                           )}
+                          <Button 
+                            variant='outline' 
+                            size='sm'
+                            onClick={() => navigate({ 
+                              to: '/businesses/$businessId', 
+                              params: { businessId: business.id.toString() } 
+                            })}
+                          >
+                            View Business Details
+                          </Button>
                         </div>
                       ))}
                     </div>

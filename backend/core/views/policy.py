@@ -3,9 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from ..models import Policy, Business, UploadedBusinessDocument, AgencyUser
-from ..serializers import PolicySerializer, UploadedBusinessDocumentSerializer
-from ..permissions import HasAgencyAccess
+from core.models import Policy, Business, UploadedBusinessDocument, AgencyUser
+from core.serializers import PolicySerializer, UploadedBusinessDocumentSerializer
+from core.permissions import HasAgencyAccess
+from core.services.renewal_comparator import RenewalComparator
+import json
+from datetime import datetime, timedelta
+
 
 class PolicyViewSet(viewsets.ModelViewSet):
     """
@@ -21,6 +25,7 @@ class PolicyViewSet(viewsets.ModelViewSet):
         """
         # Get the agency_id from the request query parameters
         agency_id = self.request.query_params.get('agency_id')
+        business_id = self.request.query_params.get('business')
         
         # Base queryset
         queryset = Policy.objects.select_related('business').prefetch_related('documents')
@@ -50,6 +55,10 @@ class PolicyViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(
                 business__customer__agency_id__in=user_agencies
             )
+        
+        # Filter by business_id if provided
+        if business_id:
+            queryset = queryset.filter(business_id=business_id)
             
         return queryset
 

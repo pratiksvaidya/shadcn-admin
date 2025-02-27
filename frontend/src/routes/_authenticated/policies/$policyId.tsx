@@ -8,10 +8,10 @@ import { useAgency } from '@/features/auth/context/agency-context'
 import { useEffect, useState } from 'react'
 import { Policy } from '@/features/policies/components/columns'
 import { Button } from '@/components/ui/button'
-import { IconArrowLeft, IconFileText, IconDownload, IconFile, IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconArrowLeft, IconFileText, IconDownload, IconFile, IconPlus, IconTrash, IconRefresh, IconArrowUp, IconArrowDown } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
 import { format, isValid } from 'date-fns'
-import { fetchPolicy, removePolicyDocument } from '@/features/policies/data/api'
+import { fetchPolicy, removePolicyDocument, generateRenewalComparison, RenewalComparison } from '@/features/policies/data/api'
 import { toast } from '@/hooks/use-toast'
 import { useNavigate } from '@tanstack/react-router'
 import { DocumentUpload } from '@/features/policies/components/document-upload'
@@ -30,6 +30,9 @@ function PolicyDetail() {
   const [error, setError] = useState<string | null>(null)
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [isRemovingDocument, setIsRemovingDocument] = useState(false)
+  const [isRenewalDialogOpen, setIsRenewalDialogOpen] = useState(false)
+  const [renewalComparison, setRenewalComparison] = useState<RenewalComparison | null>(null)
+  const [isGeneratingRenewal, setIsGeneratingRenewal] = useState(false)
   const navigate = useNavigate()
 
   const loadPolicy = async () => {
@@ -117,6 +120,30 @@ function PolicyDetail() {
     }
   };
 
+  const handleGenerateRenewal = async () => {
+    if (!selectedAgency || !policy) return;
+    
+    try {
+      setIsGeneratingRenewal(true);
+      const comparison = await generateRenewalComparison(policy.id, selectedAgency.id);
+      setRenewalComparison(comparison);
+      setIsRenewalDialogOpen(true);
+      
+      toast({
+        title: "Renewal comparison generated",
+        description: "The renewal comparison has been generated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate renewal comparison",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingRenewal(false);
+    }
+  };
+
   return (
     <>
       <Header fixed>
@@ -185,9 +212,40 @@ function PolicyDetail() {
                     </div>
                     <div>
                       <label className='text-sm text-muted-foreground'>Status</label>
-                      <Badge variant={policy.is_active ? 'default' : 'secondary'}>
-                        {policy.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <div className='mt-1'>
+                        <Badge variant={policy.is_active ? 'default' : 'secondary'}>
+                          {policy.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="pt-2">
+                      <Button 
+                        variant='outline' 
+                        size='sm'
+                        className='w-full'
+                        onClick={handleGenerateRenewal}
+                        disabled={isGeneratingRenewal || !policy.documents || policy.documents.length === 0}
+                        title={!policy.documents || policy.documents.length === 0 ? 
+                          "Please upload at least one document to generate a renewal comparison" : 
+                          "Generate a renewal comparison for this policy"}
+                      >
+                        {isGeneratingRenewal ? (
+                          <>
+                            <LoadingSpinner size='sm' className='mr-2' />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <IconRefresh className='mr-2 h-4 w-4' />
+                            Generate Renewal Comparison
+                          </>
+                        )}
+                      </Button>
+                      {(!policy.documents || policy.documents.length === 0) && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Upload documents to enable renewal comparison
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -234,8 +292,8 @@ function PolicyDetail() {
                       size='sm' 
                       className='mt-2'
                       onClick={() => navigate({ 
-                        to: '/customers/$customerId', 
-                        params: { customerId: policy.business.id.toString() } 
+                        to: '/businesses/$businessId', 
+                        params: { businessId: policy.business.id.toString() } 
                       })}
                     >
                       View Business Details
@@ -353,6 +411,140 @@ function PolicyDetail() {
           </div>
         )}
       </Main>
+
+      {/* Renewal Comparison Dialog */}
+      <Dialog open={isRenewalDialogOpen} onOpenChange={setIsRenewalDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Policy Renewal Comparison</DialogTitle>
+          </DialogHeader>
+          
+          {renewalComparison && (
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Current Policy */}
+                <div className="space-y-2">
+                  <h3 className="text-md font-semibold">Current Policy</h3>
+                  <div className="rounded-lg border p-4 space-y-3">
+                    <div>
+                      <label className="text-sm text-muted-foreground">Policy Number</label>
+                      <p>{renewalComparison.current_policy.policy_number || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Carrier</label>
+                      <p>{renewalComparison.current_policy.carrier || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Annual Premium</label>
+                      <p className="font-medium">{formatCurrency(renewalComparison.current_policy.annual_premium)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Effective Date</label>
+                      <p>{formatDate(renewalComparison.current_policy.effective_date)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Expiration Date</label>
+                      <p>{formatDate(renewalComparison.current_policy.expiration_date)}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Renewal Option */}
+                <div className="space-y-2">
+                  <h3 className="text-md font-semibold">Renewal Option</h3>
+                  <div className="rounded-lg border p-4 space-y-3">
+                    <div>
+                      <label className="text-sm text-muted-foreground">Potential Carrier</label>
+                      <p>{renewalComparison.renewal_option.potential_carrier || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Estimated Premium</label>
+                      <div className="flex items-center">
+                        <p className="font-medium">{formatCurrency(renewalComparison.renewal_option.estimated_premium)}</p>
+                        <Badge 
+                          variant={renewalComparison.comparison.premium_difference > 0 ? 'destructive' : 'default'} 
+                          className="ml-2"
+                        >
+                          {renewalComparison.comparison.premium_difference > 0 ? (
+                            <IconArrowUp className="h-3 w-3 mr-1" />
+                          ) : (
+                            <IconArrowDown className="h-3 w-3 mr-1" />
+                          )}
+                          {renewalComparison.comparison.premium_percentage_change.toFixed(1)}%
+                        </Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Effective Date</label>
+                      <p>{formatDate(renewalComparison.renewal_option.effective_date)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Expiration Date</label>
+                      <p>{formatDate(renewalComparison.renewal_option.expiration_date)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Coverage Changes */}
+              <div className="space-y-2">
+                <h3 className="text-md font-semibold">Coverage Changes</h3>
+                <div className="rounded-lg border p-4">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2">Coverage Type</th>
+                        <th className="text-left py-2 px-2">Current Limit</th>
+                        <th className="text-left py-2 px-2">Proposed Limit</th>
+                        <th className="text-left py-2 px-2">Change</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {renewalComparison.comparison.coverage_changes.map((change, index) => (
+                        <tr key={index} className="border-b last:border-0">
+                          <td className="py-2 px-2">{change.coverage_type}</td>
+                          <td className="py-2 px-2">{change.current_limit}</td>
+                          <td className="py-2 px-2">{change.proposed_limit}</td>
+                          <td className="py-2 px-2">{change.change}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              {/* Recommendations */}
+              <div className="space-y-2">
+                <h3 className="text-md font-semibold">Recommendations</h3>
+                <div className="rounded-lg border p-4">
+                  <ul className="list-disc pl-5 space-y-1">
+                    {renewalComparison.comparison.recommendations.map((recommendation, index) => (
+                      <li key={index}>{recommendation}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              
+              {/* AI Analysis */}
+              {renewalComparison.ai_analysis && (
+                <div className="space-y-2">
+                  <h3 className="text-md font-semibold">Detailed Analysis</h3>
+                  <div className="rounded-lg border p-4 prose prose-sm max-w-none">
+                    <div className="whitespace-pre-wrap">
+                      {renewalComparison.ai_analysis}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsRenewalDialogOpen(false)}>Close</Button>
+                <Button>Request Quote</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 } 

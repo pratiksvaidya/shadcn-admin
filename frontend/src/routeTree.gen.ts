@@ -19,8 +19,10 @@ import { Route as authSignInImport } from './routes/(auth)/sign-in'
 import { Route as authOtpImport } from './routes/(auth)/otp'
 import { Route as auth500Import } from './routes/(auth)/500'
 import { Route as AuthenticatedPoliciesIndexImport } from './routes/_authenticated/policies/index'
+import { Route as AuthenticatedBusinessesIndexImport } from './routes/_authenticated/businesses/index'
 import { Route as AuthenticatedPoliciesPolicyIdImport } from './routes/_authenticated/policies/$policyId'
 import { Route as AuthenticatedCustomersCustomerIdImport } from './routes/_authenticated/customers/$customerId'
+import { Route as AuthenticatedBusinessesBusinessIdImport } from './routes/_authenticated/businesses/$businessId'
 
 // Create Virtual Routes
 
@@ -79,7 +81,9 @@ const AuthenticatedIndexRoute = AuthenticatedIndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_authenticated/index.lazy').then((d) => d.Route),
+)
 
 const errors503LazyRoute = errors503LazyImport
   .update({
@@ -239,6 +243,17 @@ const AuthenticatedPoliciesIndexRoute = AuthenticatedPoliciesIndexImport.update(
   } as any,
 )
 
+const AuthenticatedBusinessesIndexRoute =
+  AuthenticatedBusinessesIndexImport.update({
+    id: '/businesses/',
+    path: '/businesses/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/businesses/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
 const AuthenticatedSettingsNotificationsLazyRoute =
   AuthenticatedSettingsNotificationsLazyImport.update({
     id: '/notifications',
@@ -294,6 +309,13 @@ const AuthenticatedCustomersCustomerIdRoute =
   AuthenticatedCustomersCustomerIdImport.update({
     id: '/customers/$customerId',
     path: '/customers/$customerId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+
+const AuthenticatedBusinessesBusinessIdRoute =
+  AuthenticatedBusinessesBusinessIdImport.update({
+    id: '/businesses/$businessId',
+    path: '/businesses/$businessId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -399,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/businesses/$businessId': {
+      id: '/_authenticated/businesses/$businessId'
+      path: '/businesses/$businessId'
+      fullPath: '/businesses/$businessId'
+      preLoaderRoute: typeof AuthenticatedBusinessesBusinessIdImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/customers/$customerId': {
       id: '/_authenticated/customers/$customerId'
       path: '/customers/$customerId'
@@ -440,6 +469,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsLazyImport
       parentRoute: typeof AuthenticatedSettingsRouteLazyImport
+    }
+    '/_authenticated/businesses/': {
+      id: '/_authenticated/businesses/'
+      path: '/businesses'
+      fullPath: '/businesses'
+      preLoaderRoute: typeof AuthenticatedBusinessesIndexImport
+      parentRoute: typeof AuthenticatedRouteImport
     }
     '/_authenticated/policies/': {
       id: '/_authenticated/policies/'
@@ -524,8 +560,10 @@ const AuthenticatedSettingsRouteLazyRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteLazyRoute: typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedBusinessesBusinessIdRoute: typeof AuthenticatedBusinessesBusinessIdRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedPoliciesPolicyIdRoute: typeof AuthenticatedPoliciesPolicyIdRoute
+  AuthenticatedBusinessesIndexRoute: typeof AuthenticatedBusinessesIndexRoute
   AuthenticatedPoliciesIndexRoute: typeof AuthenticatedPoliciesIndexRoute
   AuthenticatedAppsIndexLazyRoute: typeof AuthenticatedAppsIndexLazyRoute
   AuthenticatedChatsIndexLazyRoute: typeof AuthenticatedChatsIndexLazyRoute
@@ -538,8 +576,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteLazyRoute:
     AuthenticatedSettingsRouteLazyRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedBusinessesBusinessIdRoute:
+    AuthenticatedBusinessesBusinessIdRoute,
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
   AuthenticatedPoliciesPolicyIdRoute: AuthenticatedPoliciesPolicyIdRoute,
+  AuthenticatedBusinessesIndexRoute: AuthenticatedBusinessesIndexRoute,
   AuthenticatedPoliciesIndexRoute: AuthenticatedPoliciesIndexRoute,
   AuthenticatedAppsIndexLazyRoute: AuthenticatedAppsIndexLazyRoute,
   AuthenticatedChatsIndexLazyRoute: AuthenticatedChatsIndexLazyRoute,
@@ -565,12 +606,14 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
+  '/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/policies/$policyId': typeof AuthenticatedPoliciesPolicyIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
+  '/businesses': typeof AuthenticatedBusinessesIndexRoute
   '/policies': typeof AuthenticatedPoliciesIndexRoute
   '/apps': typeof AuthenticatedAppsIndexLazyRoute
   '/chats': typeof AuthenticatedChatsIndexLazyRoute
@@ -592,12 +635,14 @@ export interface FileRoutesByTo {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
+  '/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/policies/$policyId': typeof AuthenticatedPoliciesPolicyIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
+  '/businesses': typeof AuthenticatedBusinessesIndexRoute
   '/policies': typeof AuthenticatedPoliciesIndexRoute
   '/apps': typeof AuthenticatedAppsIndexLazyRoute
   '/chats': typeof AuthenticatedChatsIndexLazyRoute
@@ -623,12 +668,14 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500LazyRoute
   '/(errors)/503': typeof errors503LazyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/policies/$policyId': typeof AuthenticatedPoliciesPolicyIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
+  '/_authenticated/businesses/': typeof AuthenticatedBusinessesIndexRoute
   '/_authenticated/policies/': typeof AuthenticatedPoliciesIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexLazyRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexLazyRoute
@@ -654,12 +701,14 @@ export interface FileRouteTypes {
     | '/404'
     | '/503'
     | '/'
+    | '/businesses/$businessId'
     | '/customers/$customerId'
     | '/policies/$policyId'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/businesses'
     | '/policies'
     | '/apps'
     | '/chats'
@@ -680,12 +729,14 @@ export interface FileRouteTypes {
     | '/404'
     | '/503'
     | '/'
+    | '/businesses/$businessId'
     | '/customers/$customerId'
     | '/policies/$policyId'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/businesses'
     | '/policies'
     | '/apps'
     | '/chats'
@@ -709,12 +760,14 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/businesses/$businessId'
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/policies/$policyId'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/businesses/'
     | '/_authenticated/policies/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
@@ -784,8 +837,10 @@ export const routeTree = rootRoute
       "children": [
         "/_authenticated/settings",
         "/_authenticated/",
+        "/_authenticated/businesses/$businessId",
         "/_authenticated/customers/$customerId",
         "/_authenticated/policies/$policyId",
+        "/_authenticated/businesses/",
         "/_authenticated/policies/",
         "/_authenticated/apps/",
         "/_authenticated/chats/",
@@ -842,6 +897,10 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/index.tsx",
       "parent": "/_authenticated"
     },
+    "/_authenticated/businesses/$businessId": {
+      "filePath": "_authenticated/businesses/$businessId.tsx",
+      "parent": "/_authenticated"
+    },
     "/_authenticated/customers/$customerId": {
       "filePath": "_authenticated/customers/$customerId.tsx",
       "parent": "/_authenticated"
@@ -865,6 +924,10 @@ export const routeTree = rootRoute
     "/_authenticated/settings/notifications": {
       "filePath": "_authenticated/settings/notifications.lazy.tsx",
       "parent": "/_authenticated/settings"
+    },
+    "/_authenticated/businesses/": {
+      "filePath": "_authenticated/businesses/index.tsx",
+      "parent": "/_authenticated"
     },
     "/_authenticated/policies/": {
       "filePath": "_authenticated/policies/index.tsx",

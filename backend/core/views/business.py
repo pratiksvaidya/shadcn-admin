@@ -17,7 +17,17 @@ class BusinessViewSet(viewsets.ModelViewSet):
     serializer_class = BusinessSerializer
 
     def get_queryset(self):
-        return Business.objects.filter(customer__agency_owner=self.request.user)
+        # Get the agency_id from query params if provided
+        agency_id = self.request.query_params.get('agency_id')
+        
+        # Base queryset - filter businesses where the customer's agency is associated with the current user
+        queryset = Business.objects.filter(customer__agency__users=self.request.user)
+        
+        # If agency_id is provided, further filter by that specific agency
+        if agency_id:
+            queryset = queryset.filter(customer__agency_id=agency_id)
+            
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'retrieve':

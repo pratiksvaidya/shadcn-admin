@@ -19,8 +19,6 @@ export const policySchema = z.object({
     id: z.number(),
     name: z.string(),
     file: z.string(),
-    created_at: z.string().optional(),
-    updated_at: z.string().optional(),
     // Add other document fields as needed
   })).optional(),
   created_at: z.string(),
@@ -292,4 +290,56 @@ export async function removePolicyDocument(
     const error = await response.json().catch(() => ({}))
     throw new Error(error.error || 'Failed to remove document')
   }
+}
+
+// Define the type for renewal comparison response
+export interface RenewalComparison {
+  current_policy: {
+    policy_number: string | null;
+    carrier: string | null;
+    annual_premium: number;
+    effective_date: string | null;
+    expiration_date: string | null;
+  };
+  renewal_option: {
+    estimated_premium: number;
+    potential_carrier: string | null;
+    effective_date: string;
+    expiration_date: string;
+  };
+  comparison: {
+    premium_difference: number;
+    premium_percentage_change: number;
+    coverage_changes: Array<{
+      coverage_type: string;
+      current_limit: string;
+      proposed_limit: string;
+      change: string;
+    }>;
+    recommendations: string[];
+  };
+  ai_analysis?: string; // Optional AI-generated analysis
+}
+
+export async function generateRenewalComparison(
+  policyId: number,
+  agencyId: number
+): Promise<RenewalComparison> {
+  if (!agencyId) {
+    throw new Error('Please select an agency to generate renewal comparison')
+  }
+
+  const response = await apiClient(`/api/policies/${policyId}/generate_renewal_comparison/?agency_id=${agencyId}`, {
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Please login to generate renewal comparison')
+    }
+    const error = await response.json().catch(() => ({}))
+    throw new Error(error.error || 'Failed to generate renewal comparison')
+  }
+
+  return response.json()
 } 
