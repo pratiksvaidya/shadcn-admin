@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+insurance-backend/*.so
+insurance-backend/.Python
+insurance-backend/build/
+insurance-backend/develop-eggs/
+insurance-backend/dist/
+insurance-backend/downloads/
+insurance-backend/eggs/
+insurance-backend/.eggs/
+insurance-backend/lib/
+insurance-backend/lib64/
+insurance-backend/parts/
+insurance-backend/sdist/
+insurance-backend/var/
+insurance-backend/wheels/
+insurance-backend/*.egg-info/
+insurance-backend/.installed.cfg
+insurance-backend/*.egg
+
+# Django
+insurance-backend/*.log
+insurance-backend/local_settings.py
+insurance-backend/db.sqlite3
+insurance-backend/db.sqlite3-journal
+insurance-backend/media/
+
+# Environment variables
+insurance-backend/.env
+insurance-backend/.env.*
+!insurance-backend/.env.example
+
+# Virtual Environment
+insurance-backend/venv/
+insurance-backend/ENV/
+insurance-backend/env/
+insurance-backend/.venv/
+insurance-backend/.env/
+insurance-backend/env.bak/
+insurance-backend/venv.bak/
+
+# Coverage and test reports
+insurance-backend/htmlcov/
+insurance-backend/.tox/
+insurance-backend/.nox/
+insurance-backend/.coverage
+insurance-backend/.coverage.*
+insurance-backend/.cache
+insurance-backend/nosetests.xml
+insurance-backend/coverage.xml
+insurance-backend/*.cover
+insurance-backend/*.py,cover
+insurance-backend/.hypothesis/
+insurance-backend/.pytest_cache/
+insurance-backend/cover/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Project root
+/.env
+/.env.*
+!/.env.example 
