@@ -3,6 +3,7 @@ import {
   IconPalette,
   IconSettings,
   IconUsers,
+  IconFileText,
 } from '@tabler/icons-react'
 import { GalleryVerticalEnd } from 'lucide-react'
 import { type SidebarData } from '../types'
@@ -23,6 +24,11 @@ export const sidebarData: Omit<SidebarData, 'user'> = {
           title: 'Customers',
           url: '/',
           icon: IconUsers,
+        },
+        {
+          title: 'Policies',
+          url: '/policies',
+          icon: IconFileText,
         },
         {
           title: 'Apps',

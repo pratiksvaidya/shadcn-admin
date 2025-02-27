@@ -14,8 +14,7 @@ class HasAgencyAccess(permissions.BasePermission):
         # For create, update, delete actions, check if user has an active agency association
         if request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
             return AgencyUser.objects.filter(
-                user=request.user,
-                is_active=True
+                user=request.user
             ).exists()
 
         return True
@@ -29,14 +28,17 @@ class HasAgencyAccess(permissions.BasePermission):
         # Different models will have different paths to their agency
         if hasattr(obj, 'agency'):
             agency = obj.agency
-        elif hasattr(obj, 'business'):
-            agency = obj.business.agency
+        elif hasattr(obj, 'business') and hasattr(obj.business, 'customer'):
+            # For Policy objects, the path is business -> customer -> agency
+            agency = obj.business.customer.agency
+        elif hasattr(obj, 'customer'):
+            # For Business objects, the path is customer -> agency
+            agency = obj.customer.agency
         else:
             return False
 
-        # Check if user has an active association with this agency
+        # Check if user has an association with this agency
         return AgencyUser.objects.filter(
             user=request.user,
-            agency=agency,
-            is_active=True
+            agency=agency
         ).exists() 

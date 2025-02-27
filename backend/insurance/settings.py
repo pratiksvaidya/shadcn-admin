@@ -132,6 +132,7 @@ CORS_ALLOWED_ORIGINS = [
     'https://pratik-frontend.ngrok.app',
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost:8000',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -139,14 +140,17 @@ CSRF_TRUSTED_ORIGINS = [
     'https://pratik-backend.ngrok.app',
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost:8000',
 ]
 
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'None'
+# Modified for Safari compatibility
+CSRF_COOKIE_SECURE = False  # Set to False for local development
+CSRF_COOKIE_SAMESITE = 'Lax'  # Changed from 'None' to 'Lax' for better Safari compatibility
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access to CSRF token
 
-SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'None'
+# Modified for Safari compatibility
+SESSION_COOKIE_SECURE = False  # Set to False for local development
+SESSION_COOKIE_SAMESITE = 'Lax'  # Changed from 'None' to 'Lax' 
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

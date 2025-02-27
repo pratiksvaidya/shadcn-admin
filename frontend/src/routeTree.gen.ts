@@ -18,6 +18,8 @@ import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index
 import { Route as authSignInImport } from './routes/(auth)/sign-in'
 import { Route as authOtpImport } from './routes/(auth)/otp'
 import { Route as auth500Import } from './routes/(auth)/500'
+import { Route as AuthenticatedPoliciesIndexImport } from './routes/_authenticated/policies/index'
+import { Route as AuthenticatedPoliciesPolicyIdImport } from './routes/_authenticated/policies/$policyId'
 import { Route as AuthenticatedCustomersCustomerIdImport } from './routes/_authenticated/customers/$customerId'
 
 // Create Virtual Routes
@@ -229,6 +231,14 @@ const AuthenticatedAppsIndexLazyRoute = AuthenticatedAppsIndexLazyImport.update(
   import('./routes/_authenticated/apps/index.lazy').then((d) => d.Route),
 )
 
+const AuthenticatedPoliciesIndexRoute = AuthenticatedPoliciesIndexImport.update(
+  {
+    id: '/policies/',
+    path: '/policies/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any,
+)
+
 const AuthenticatedSettingsNotificationsLazyRoute =
   AuthenticatedSettingsNotificationsLazyImport.update({
     id: '/notifications',
@@ -272,6 +282,13 @@ const AuthenticatedSettingsAccountLazyRoute =
       (d) => d.Route,
     ),
   )
+
+const AuthenticatedPoliciesPolicyIdRoute =
+  AuthenticatedPoliciesPolicyIdImport.update({
+    id: '/policies/$policyId',
+    path: '/policies/$policyId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 const AuthenticatedCustomersCustomerIdRoute =
   AuthenticatedCustomersCustomerIdImport.update({
@@ -389,6 +406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomersCustomerIdImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/policies/$policyId': {
+      id: '/_authenticated/policies/$policyId'
+      path: '/policies/$policyId'
+      fullPath: '/policies/$policyId'
+      preLoaderRoute: typeof AuthenticatedPoliciesPolicyIdImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/settings/account': {
       id: '/_authenticated/settings/account'
       path: '/account'
@@ -416,6 +440,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsLazyImport
       parentRoute: typeof AuthenticatedSettingsRouteLazyImport
+    }
+    '/_authenticated/policies/': {
+      id: '/_authenticated/policies/'
+      path: '/policies'
+      fullPath: '/policies'
+      preLoaderRoute: typeof AuthenticatedPoliciesIndexImport
+      parentRoute: typeof AuthenticatedRouteImport
     }
     '/_authenticated/apps/': {
       id: '/_authenticated/apps/'
@@ -494,6 +525,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteLazyRoute: typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
+  AuthenticatedPoliciesPolicyIdRoute: typeof AuthenticatedPoliciesPolicyIdRoute
+  AuthenticatedPoliciesIndexRoute: typeof AuthenticatedPoliciesIndexRoute
   AuthenticatedAppsIndexLazyRoute: typeof AuthenticatedAppsIndexLazyRoute
   AuthenticatedChatsIndexLazyRoute: typeof AuthenticatedChatsIndexLazyRoute
   AuthenticatedCustomersIndexLazyRoute: typeof AuthenticatedCustomersIndexLazyRoute
@@ -506,6 +539,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedSettingsRouteLazyRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
+  AuthenticatedPoliciesPolicyIdRoute: AuthenticatedPoliciesPolicyIdRoute,
+  AuthenticatedPoliciesIndexRoute: AuthenticatedPoliciesIndexRoute,
   AuthenticatedAppsIndexLazyRoute: AuthenticatedAppsIndexLazyRoute,
   AuthenticatedChatsIndexLazyRoute: AuthenticatedChatsIndexLazyRoute,
   AuthenticatedCustomersIndexLazyRoute: AuthenticatedCustomersIndexLazyRoute,
@@ -531,10 +566,12 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/policies/$policyId': typeof AuthenticatedPoliciesPolicyIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
+  '/policies': typeof AuthenticatedPoliciesIndexRoute
   '/apps': typeof AuthenticatedAppsIndexLazyRoute
   '/chats': typeof AuthenticatedChatsIndexLazyRoute
   '/customers': typeof AuthenticatedCustomersIndexLazyRoute
@@ -556,10 +593,12 @@ export interface FileRoutesByTo {
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/policies/$policyId': typeof AuthenticatedPoliciesPolicyIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
+  '/policies': typeof AuthenticatedPoliciesIndexRoute
   '/apps': typeof AuthenticatedAppsIndexLazyRoute
   '/chats': typeof AuthenticatedChatsIndexLazyRoute
   '/customers': typeof AuthenticatedCustomersIndexLazyRoute
@@ -585,10 +624,12 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503LazyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/_authenticated/policies/$policyId': typeof AuthenticatedPoliciesPolicyIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
+  '/_authenticated/policies/': typeof AuthenticatedPoliciesIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexLazyRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexLazyRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexLazyRoute
@@ -614,10 +655,12 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/customers/$customerId'
+    | '/policies/$policyId'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/policies'
     | '/apps'
     | '/chats'
     | '/customers'
@@ -638,10 +681,12 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/customers/$customerId'
+    | '/policies/$policyId'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/policies'
     | '/apps'
     | '/chats'
     | '/customers'
@@ -665,10 +710,12 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/'
     | '/_authenticated/customers/$customerId'
+    | '/_authenticated/policies/$policyId'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/policies/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
     | '/_authenticated/customers/'
@@ -738,6 +785,8 @@ export const routeTree = rootRoute
         "/_authenticated/settings",
         "/_authenticated/",
         "/_authenticated/customers/$customerId",
+        "/_authenticated/policies/$policyId",
+        "/_authenticated/policies/",
         "/_authenticated/apps/",
         "/_authenticated/chats/",
         "/_authenticated/customers/",
@@ -797,6 +846,10 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/customers/$customerId.tsx",
       "parent": "/_authenticated"
     },
+    "/_authenticated/policies/$policyId": {
+      "filePath": "_authenticated/policies/$policyId.tsx",
+      "parent": "/_authenticated"
+    },
     "/_authenticated/settings/account": {
       "filePath": "_authenticated/settings/account.lazy.tsx",
       "parent": "/_authenticated/settings"
@@ -812,6 +865,10 @@ export const routeTree = rootRoute
     "/_authenticated/settings/notifications": {
       "filePath": "_authenticated/settings/notifications.lazy.tsx",
       "parent": "/_authenticated/settings"
+    },
+    "/_authenticated/policies/": {
+      "filePath": "_authenticated/policies/index.tsx",
+      "parent": "/_authenticated"
     },
     "/_authenticated/apps/": {
       "filePath": "_authenticated/apps/index.lazy.tsx",

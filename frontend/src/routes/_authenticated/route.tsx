@@ -10,28 +10,6 @@ import { LoadingSpinner } from '@/components/loading-spinner'
 
 export const Route = createFileRoute('/_authenticated')({
   component: RouteComponent,
-  beforeLoad: async ({ location }) => {
-    try {
-      const response = await fetch('http://localhost:8000/api/auth/user/', {
-        credentials: 'include',
-      })
-      if (!response.ok) {
-        throw redirect({
-          to: '/sign-in',
-          search: {
-            redirect: location.pathname,
-          },
-        })
-      }
-    } catch (error) {
-      throw redirect({
-        to: '/sign-in',
-        search: {
-          redirect: location.pathname,
-        },
-      })
-    }
-  },
 })
 
 function RouteComponent() {

@@ -15,6 +15,11 @@ interface ErrorResponse {
   error: string
 }
 
+// Add a cache for the current user
+let cachedUser: User | null = null;
+let cacheExpiry: number | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   try {
     const response = await apiClient('/api/auth/login/', {
@@ -30,6 +35,10 @@ export async function login(username: string, password: string): Promise<LoginRe
       }
       throw new Error(errorData.error || 'Login failed')
     }
+
+    // Clear the user cache on login
+    cachedUser = null;
+    cacheExpiry = null;
 
     return response.json()
   } catch (error) {
@@ -55,6 +64,10 @@ export async function logout(): Promise<void> {
       throw new Error(errorData.error || 'Logout failed')
     }
 
+    // Clear the user cache on logout
+    cachedUser = null;
+    cacheExpiry = null;
+
     // Clear any stored tokens or session data
     document.cookie.split(';').forEach(cookie => {
       const [name] = cookie.trim().split('=')
@@ -72,14 +85,29 @@ export async function logout(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<User> {
+  // Check if we have a cached user and the cache hasn't expired
+  const now = Date.now();
+  if (cachedUser && cacheExpiry && now < cacheExpiry) {
+    return cachedUser;
+  }
+
   try {
     const response = await apiClient('/api/auth/user/')
 
     if (!response.ok) {
+      // Clear cache on error
+      cachedUser = null;
+      cacheExpiry = null;
       throw new Error('Failed to get current user')
     }
 
-    return response.json()
+    const user = await response.json();
+    
+    // Cache the user and set expiry
+    cachedUser = user;
+    cacheExpiry = now + CACHE_DURATION;
+    
+    return user;
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('Unable to connect to the server')) {

@@ -1,7 +1,6 @@
 import { ColumnDef } from '@tanstack/react-table'
 import { Customer } from '../data/schema'
-import { DataTableColumnHeader } from './data-table-column-header'
-import { DataTableRowActions } from './data-table-row-actions'
+import { DataTableColumnHeader } from '@/components/ui/data-table'
 import { Badge } from '@/components/ui/badge'
 
 export const columns: ColumnDef<Customer>[] = [
@@ -66,9 +65,5 @@ export const columns: ColumnDef<Customer>[] = [
         </div>
       )
     },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <DataTableRowActions row={row} />,
   },
 ]
